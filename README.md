@@ -1,7 +1,5 @@
 - 👋 Hi, I’m @dstrkto
 - 👀 I’m interested in all the things.
-- 🌱 I’m currently learning how to use GitHub.
-- 💞️ I’m looking to collaborate on story projects.
 - 📫 How to reach me...don't.
 
 <!---
