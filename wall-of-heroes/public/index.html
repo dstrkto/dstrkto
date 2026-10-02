@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wall of Heroes</title>
+  <meta name="description" content="Customer shout-outs for our contact center heroes.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="start-lights" id="startLights" aria-hidden="true">
+    <div class="lights"><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+
+  <header class="hero">
+    <div class="checker"></div>
+    <div class="hero-inner">
+      <p class="eyebrow">Contact Center Grand Prix</p>
+      <h1><span class="speed">Wall of</span> <span class="title-heroes">Heroes</span></h1>
+      <p class="tagline">Real words from real customers about the drivers who make it happen.</p>
+      <div class="stats" id="stats">
+        <div class="stat"><b id="statTotal">0</b><span>Shout-outs</span></div>
+        <div class="stat"><b id="statDrivers">0</b><span>Drivers on the board</span></div>
+        <div class="stat"><b id="statWeek">0</b><span>Last 7 days</span></div>
+        <div class="stat"><b id="statCheers">0</b><span>Cheers</span></div>
+      </div>
+    </div>
+    <div class="checker"></div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" class="tab active" data-view="wall" aria-selected="true">🏁 The Wall</button>
+    <button role="tab" class="tab" data-view="leaderboard" aria-selected="false">🏆 Pole Position</button>
+    <button role="tab" class="tab" data-view="pit" aria-selected="false">🔧 Pit Lane <small>(leaders)</small></button>
+  </nav>
+
+  <main>
+    <section id="view-wall" class="view active">
+      <div class="filters">
+        <label>Driver
+          <select id="fAgent"><option value="">All drivers</option></select>
+        </label>
+        <label>Team
+          <select id="fTeam"><option value="">All teams</option></select>
+        </label>
+        <label>Channel
+          <select id="fChannel"><option value="">All channels</option></select>
+        </label>
+        <label class="grow">Search
+          <input id="fSearch" type="search" placeholder="Search words, names…">
+        </label>
+      </div>
+      <div id="garage" class="garage" hidden></div>
+      <div id="wall" class="wall" aria-live="polite"></div>
+      <p id="wallEmpty" class="empty" hidden>No shout-outs on this stretch of track yet.</p>
+    </section>
+
+    <section id="view-leaderboard" class="view">
+      <div class="period" role="group" aria-label="Period">
+        <button class="chip-btn active" data-period="7">Last 7 days</button>
+        <button class="chip-btn" data-period="30">Last 30 days</button>
+        <button class="chip-btn" data-period="0">All time</button>
+      </div>
+      <div id="podium" class="podium"></div>
+      <div class="boards">
+        <div class="board">
+          <h2>Driver standings</h2>
+          <ol id="driverStandings" class="standings"></ol>
+        </div>
+        <div class="board">
+          <h2>Team constructors</h2>
+          <ol id="teamStandings" class="standings"></ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-pit" class="view">
+      <form id="unlockForm" class="panel unlock">
+        <h2>🔒 Pit Lane access</h2>
+        <p>Leaders: enter the team passcode to post shout-outs.</p>
+        <div class="row">
+          <input id="passcode" type="password" autocomplete="current-password" placeholder="Leader passcode" required>
+          <button class="btn" type="submit">Enter pit lane</button>
+        </div>
+        <p id="unlockMsg" class="msg" role="status"></p>
+      </form>
+
+      <form id="postForm" class="panel" hidden>
+        <div class="panel-head">
+          <h2>📣 Post a shout-out</h2>
+          <button type="button" id="lockBtn" class="btn ghost">Lock pit lane</button>
+        </div>
+        <div class="grid">
+          <label>Agent name *
+            <input name="agent" list="agentList" maxlength="60" required>
+          </label>
+          <label>Team
+            <input name="team" list="teamList" maxlength="40">
+          </label>
+          <label>Channel
+            <select name="channel" id="channelSelect"></select>
+          </label>
+          <label>Your name *
+            <input name="leader" maxlength="60" required>
+          </label>
+          <label class="span2">Customer verbatim *
+            <textarea name="verbatim" rows="4" maxlength="1000" required placeholder="“She fixed my issue in minutes and was so kind about it!”"></textarea>
+          </label>
+          <label>Customer (optional, no personal info)
+            <input name="customer" maxlength="60" placeholder="e.g. Customer in Ohio">
+          </label>
+          <label>Leader note (optional)
+            <input name="note" maxlength="280" placeholder="e.g. Textbook ownership!">
+          </label>
+        </div>
+        <datalist id="agentList"></datalist>
+        <datalist id="teamList"></datalist>
+        <div class="row">
+          <button class="btn big" type="submit">🏁 Wave the flag</button>
+          <p id="postMsg" class="msg" role="status"></p>
+        </div>
+        <p class="hint">Unlocked: delete buttons now show on the wall's cards.</p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="checker"></div>
+    <p>Keep it green. Keep it fast. Keep it kind. 🏎️💨</p>
+  </footer>
+
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "wall-of-heroes",
+  "version": "1.0.0",
+  "description": "Racing-themed Wall of Heroes for contact center shout-outs",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  },
+  "private": true,
+  "type": "module"
+}
