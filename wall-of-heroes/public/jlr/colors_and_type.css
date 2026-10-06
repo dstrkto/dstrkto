@@ -1,0 +1,199 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   JLR Design System — colors_and_type.css
+   Source: Updated JLR Corporate PowerPoint (2025)
+   Notes:  Three colour stories (Blue, Green, Orange), each available in
+           Light Palette and Dark Palette form. ONE palette per topic /
+           chapter / presentation — never mixed.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Fonts ───────────────────────────────────────────────────────────────── */
+/* JLR Emeric — the official JLR corporate typeface. Three weights are
+   bundled: ExtraLight (200) for body, Regular (400) for default UI,
+   SemiBold (600) for display / headlines. Arial is the brand-mandated
+   web fallback. */
+@font-face {
+  font-family: "JLR Emeric";
+  src: url("fonts/JLREmeric-ExtraLight.ttf") format("truetype");
+  font-weight: 200; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JLR Emeric";
+  src: url("fonts/JLREmeric-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JLR Emeric";
+  src: url("fonts/JLREmeric-SemiBold.ttf") format("truetype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+
+:root {
+  /* ─── Brand neutrals ─── */
+  --jlr-black:        #000000;
+  --jlr-white:        #FFFFFF;
+  --jlr-bone:         #EEECE1;   /* warm off-white, used in template */
+  --jlr-ink:          #111111;   /* default text on light */
+  --jlr-graphite:     #2A2A2A;   /* secondary text on light */
+  --jlr-fog:          #6B6B6B;   /* tertiary / captions on light */
+  --jlr-mist:         #C9C9C9;   /* dividers on light */
+  --jlr-cloud:        #F4F4F2;   /* page surface, near-white */
+
+  /* ─── JLR Blue — trust, structure, calm. Corporate & operational. ─── */
+  --jlr-blue-light-1:    #41BDED;   /* light palette — accent / call-out  */
+  --jlr-blue-light-2:    #9DBDCE;   /* light palette — supporting fill    */
+  --jlr-blue-dark-1:     #1983C0;   /* dark palette  — accent / call-out  */
+  --jlr-blue-dark-2:     #5C7482;   /* dark palette  — supporting fill    */
+
+  /* ─── JLR Green — progress, sustainability, heritage. ─── */
+  --jlr-green-light-1:   #95C98F;   /* light palette — accent             */
+  --jlr-green-light-2:   #9AA99D;   /* light palette — supporting fill    */
+  --jlr-green-dark-1:    #4E8951;   /* dark palette  — accent             */
+  --jlr-green-dark-2:    #637364;   /* dark palette  — supporting fill    */
+
+  /* ─── JLR Orange — energy, optimism, celebration, culture. ─── */
+  --jlr-orange-light-1:  #DF6F21;   /* light palette — accent             */
+  --jlr-orange-light-2:  #BF7F56;   /* light palette — supporting fill    */
+  --jlr-orange-dark-1:   #B6571E;   /* dark palette  — accent             */
+  --jlr-orange-dark-2:   #96553E;   /* dark palette  — supporting fill    */
+
+  /* ─── Active palette (set per topic; default = JLR Blue Light) ─── */
+  --accent-1: var(--jlr-blue-light-1);
+  --accent-2: var(--jlr-blue-light-2);
+
+  /* ─── Semantic surfaces ─── */
+  --bg:           var(--jlr-white);
+  --bg-warm:      var(--jlr-bone);
+  --surface:      var(--jlr-cloud);
+  --fg-1:         var(--jlr-ink);
+  --fg-2:         var(--jlr-graphite);
+  --fg-3:         var(--jlr-fog);
+  --rule:         var(--jlr-mist);
+
+  /* ─── Type stack ─── */
+  --font-display: "JLR Emeric", Arial, system-ui, sans-serif;
+  --font-body:    "JLR Emeric", Arial, system-ui, sans-serif;
+
+  /* Display weight = JLR Emeric SemiBold (600).
+     Body weight    = JLR Emeric ExtraLight (200).
+     Headlines and large numerals lean on UPPERCASE + tight tracking. */
+  --weight-display: 600;
+  --weight-body:    200;
+  --weight-caption: 400;
+  --tracking-display: 0.01em;
+  --tracking-eyebrow: 0.18em;
+  --tracking-body:    0;
+
+  /* ─── Type scale (1920×1080 slide reference) ─── */
+  --fs-hero:        128px;   /* "THANK YOU", title cards */
+  --fs-h1:           72px;   /* section titles */
+  --fs-h2:           48px;
+  --fs-h3:           32px;
+  --fs-body-lg:      24px;
+  --fs-body:         20px;
+  --fs-body-sm:      16px;
+  --fs-caption:      12px;
+  --fs-eyebrow:      14px;
+
+  /* ─── Spacing (8pt scale, slide-friendly) ─── */
+  --s-1:   4px;
+  --s-2:   8px;
+  --s-3:  16px;
+  --s-4:  24px;
+  --s-5:  32px;
+  --s-6:  48px;
+  --s-7:  64px;
+  --s-8:  96px;
+  --s-9: 128px;
+
+  /* Slide page margins (matches PPTX template). */
+  --page-margin-x: 96px;
+  --page-margin-y: 64px;
+
+  /* ─── Radii ─── Brand uses sharp 0 radius almost exclusively. */
+  --r-0: 0;
+  --r-1: 2px;     /* hairline rounding only when truly needed */
+
+  /* ─── Borders ─── */
+  --hairline: 1px solid var(--rule);
+  --rule-strong: 1px solid var(--fg-1);
+
+  /* ─── Shadow ─── */
+  /* Brand is essentially flat. Use a single low-key shadow only for
+     web/UI affordances — never on slides. */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.06);
+}
+
+/* ─── Palette helpers — drop on a section to switch story ─── */
+.palette-blue-light    { --accent-1: var(--jlr-blue-light-1);   --accent-2: var(--jlr-blue-light-2);   }
+.palette-blue-dark     { --accent-1: var(--jlr-blue-dark-1);    --accent-2: var(--jlr-blue-dark-2);    }
+.palette-green-light   { --accent-1: var(--jlr-green-light-1);  --accent-2: var(--jlr-green-light-2);  }
+.palette-green-dark    { --accent-1: var(--jlr-green-dark-1);   --accent-2: var(--jlr-green-dark-2);   }
+.palette-orange-light  { --accent-1: var(--jlr-orange-light-1); --accent-2: var(--jlr-orange-light-2); }
+.palette-orange-dark   { --accent-1: var(--jlr-orange-dark-1);  --accent-2: var(--jlr-orange-dark-2);  }
+
+/* ─── Element base styles (semantic) ─── */
+body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  color: var(--fg-1);
+  background: var(--bg);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, .display {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.05;
+  text-transform: uppercase;     /* Hero & section titles run in CAPS */
+  color: var(--fg-1);
+  margin: 0;
+}
+
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); letter-spacing: 0.04em; }
+
+p, .body {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--fg-2);
+  text-wrap: pretty;
+  margin: 0 0 1em 0;
+}
+
+small, .caption {
+  font-size: var(--fs-caption);
+  letter-spacing: 0.04em;
+  color: var(--fg-3);
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-1);
+}
+
+/* JLR-style rule: the brand uses a thin horizontal line as a chrome motif.
+   It separates the logo block, the page number, the running deck-name foot. */
+.jlr-rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.9;
+}
+
+/* Code / mono — rarely used but defined for completeness. */
+code, kbd, pre, samp {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}

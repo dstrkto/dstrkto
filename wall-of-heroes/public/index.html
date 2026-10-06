@@ -5,147 +5,250 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wall of Heroes</title>
   <meta name="description" content="Customer shout-outs for our contact center heroes.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/jlr-logo.png">
+  <link rel="preload" href="jlr/fonts/JLREmeric-SemiBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="jlr/colors_and_type.css">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div class="start-lights" id="startLights" aria-hidden="true">
-    <div class="lights"><span></span><span></span><span></span><span></span><span></span></div>
+<body class="palette-green-dark">
+  <div id="intro" class="intro palette-green-light" hidden>
+    <div class="eyebrow-dim">Contact Center Grand Prix</div>
+    <div class="lights" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    <button type="button" id="skipIntro" class="btn-ghost dark">Tap to skip</button>
   </div>
 
-  <header class="hero">
-    <div class="checker"></div>
-    <div class="hero-inner">
-      <p class="eyebrow">Contact Center Grand Prix</p>
-      <h1><span class="speed">Wall of</span> <span class="title-heroes">Heroes</span></h1>
-      <p class="tagline">Real words from real customers about the drivers who make it happen.</p>
-      <div class="stats" id="stats">
-        <div class="stat"><b id="statTotal">0</b><span>Shout-outs</span></div>
-        <div class="stat"><b id="statDrivers">0</b><span>Drivers on the board</span></div>
-        <div class="stat"><b id="statWeek">0</b><span>Last 7 days</span></div>
-        <div class="stat"><b id="statCheers">0</b><span>Cheers</span></div>
+  <header class="hero palette-green-light dark">
+    <div class="hero-top">
+      <div class="hero-copy">
+        <div class="chrome">
+          <img src="assets/jlr-logo.png" alt="JLR" class="logo">
+          <span class="chrome-rule"></span>
+          <span class="eyebrow-dim">Contact Center Grand Prix</span>
+        </div>
+        <div class="hero-title">
+          <h1>Wall of<br>Heroes</h1>
+          <p class="tagline">Real words from real customers about the drivers who make it happen.</p>
+        </div>
       </div>
+      <div class="hero-image" role="img" aria-label="Close-up of a dark alloy wheel"></div>
     </div>
-    <div class="checker"></div>
+    <div class="stats">
+      <div class="stat"><b id="statTotal">0</b><span>Shout-outs</span></div>
+      <div class="stat"><b id="statDrivers">0</b><span>Drivers on the board</span></div>
+      <div class="stat"><b id="statWeek">0</b><span>Last 7 days</span></div>
+      <div class="stat"><b id="statCheers">0</b><span>Cheers</span></div>
+    </div>
   </header>
 
-  <nav class="tabs" role="tablist">
-    <button role="tab" class="tab active" data-view="wall" aria-selected="true">🏁 The Wall</button>
-    <button role="tab" class="tab" data-view="leaderboard" aria-selected="false">🏆 Pole Position</button>
-    <button role="tab" class="tab" data-view="pit" aria-selected="false">🔧 Pit Lane <small>(leaders)</small></button>
+  <nav class="tabs" aria-label="Sections">
+    <div class="tabs-inner" role="tablist">
+      <button role="tab" class="tab" data-view="wall" aria-selected="true">The Wall</button>
+      <button role="tab" class="tab" data-view="pole" aria-selected="false">Pole Position</button>
+      <button role="tab" class="tab" data-view="pit" aria-selected="false">Pit Lane <span class="tag-leaders">Leaders</span></button>
+    </div>
   </nav>
 
   <main>
-    <section id="view-wall" class="view active">
-      <div class="filters">
-        <label>Driver
+    <!-- ================= THE WALL ================= -->
+    <section id="view-wall" class="view" aria-label="The Wall">
+      <button type="button" id="filterToggle" class="filter-toggle" aria-expanded="false" aria-controls="filters">
+        <span>Filters</span><span id="filterSummary">All</span>
+      </button>
+      <div id="filters" class="filters">
+        <label class="field">
+          <span class="label">Driver</span>
           <select id="fAgent"><option value="">All drivers</option></select>
         </label>
-        <label>Team
+        <label class="field">
+          <span class="label">Team</span>
           <select id="fTeam"><option value="">All teams</option></select>
         </label>
-        <label>Channel
+        <label class="field">
+          <span class="label">Channel</span>
           <select id="fChannel"><option value="">All channels</option></select>
         </label>
-        <label class="grow">Search
-          <input id="fSearch" type="search" placeholder="Search words, names…">
+        <label class="field">
+          <span class="label">Search</span>
+          <input id="fSearch" type="search" placeholder="Agent, team, words…">
         </label>
       </div>
+
       <div id="garage" class="garage" hidden></div>
-      <div id="wall" class="wall" aria-live="polite"></div>
-      <p id="wallEmpty" class="empty" hidden>No shout-outs on this stretch of track yet.</p>
+
+      <div id="wallLoading" class="cols" aria-busy="true" aria-label="Loading shout-outs"></div>
+
+      <div id="wallError" class="state-error" role="alert" hidden>
+        <div class="label strong">Connection lost</div>
+        <div class="state-title">Couldn’t reach the pit wall</div>
+        <div id="wallErrorMsg" class="mono"></div>
+      </div>
+
+      <div id="wallEmpty" class="state-empty" hidden>
+        <div class="checker-block" aria-hidden="true"></div>
+        <div class="state-title">No shout-outs on this stretch of track yet.</div>
+        <button type="button" id="clearFilters" class="btn-outline" hidden>Clear filters</button>
+      </div>
+
+      <div id="wall" class="cols"></div>
     </section>
 
-    <section id="view-leaderboard" class="view">
-      <div class="period" role="group" aria-label="Period">
-        <button class="chip-btn active" data-period="7">Last 7 days</button>
-        <button class="chip-btn" data-period="30">Last 30 days</button>
-        <button class="chip-btn" data-period="0">All time</button>
+    <!-- ================= POLE POSITION ================= -->
+    <section id="view-pole" class="view" aria-label="Pole Position" hidden>
+      <div class="section-head">
+        <div>
+          <div class="label">Leaderboard</div>
+          <h2 class="section-title">Pole Position</h2>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Period">
+          <button role="radio" data-period="7" aria-checked="true">Last 7 days</button>
+          <button role="radio" data-period="30" aria-checked="false">Last 30 days</button>
+          <button role="radio" data-period="0" aria-checked="false">All time</button>
+        </div>
       </div>
-      <div id="podium" class="podium"></div>
-      <div class="boards">
-        <div class="board">
-          <h2>Driver standings</h2>
-          <ol id="driverStandings" class="standings"></ol>
+
+      <div id="poleEmpty" class="state-empty" hidden>
+        <div class="checker-block" aria-hidden="true"></div>
+        <div class="state-title">No laps recorded in this period.</div>
+      </div>
+
+      <div id="poleContent">
+        <div id="podium" class="podium"></div>
+        <div class="boards">
+          <div class="board">
+            <div class="board-head"><h3>Driver standings</h3><span class="label">Call-outs</span></div>
+            <ol id="driverStandings" class="standings"></ol>
+          </div>
+          <div class="board">
+            <div class="board-head"><h3>Team constructors</h3><span class="label">Call-outs</span></div>
+            <ol id="teamStandings" class="standings"></ol>
+          </div>
         </div>
-        <div class="board">
-          <h2>Team constructors</h2>
-          <ol id="teamStandings" class="standings"></ol>
-        </div>
+        <p class="footnote">Ranked by call-outs, then cheers, then name.</p>
       </div>
     </section>
 
-    <section id="view-pit" class="view">
-      <form id="unlockForm" class="panel unlock">
-        <h2>🔒 Pit Lane access</h2>
-        <p>Leaders: enter the team passcode to post shout-outs.</p>
-        <div class="row">
-          <input id="passcode" type="password" autocomplete="current-password" placeholder="Leader passcode" required>
-          <button class="btn" type="submit">Enter pit lane</button>
+    <!-- ================= PIT LANE ================= -->
+    <section id="view-pit" class="view" aria-label="Pit Lane" hidden>
+      <div id="locked" class="locked">
+        <div class="locked-art dark">
+          <div class="lights small" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="section-title">Pit Lane<br>access</div>
         </div>
-        <p id="unlockMsg" class="msg" role="status"></p>
-      </form>
+        <form id="unlockForm" class="locked-form">
+          <p class="lede">For leaders only. Enter the shared passcode to post or remove shout-outs.</p>
+          <label class="field">
+            <span class="label">Passcode</span>
+            <input id="passcode" type="password" autocomplete="current-password" required aria-describedby="passErr" class="input-lg passcode">
+          </label>
+          <div id="passErr" class="inline-error" role="alert" hidden><span class="err-tag">Error</span><span id="passErrMsg">Wrong passcode.</span></div>
+          <button type="submit" class="btn-solid">Enter pit lane</button>
+        </form>
+      </div>
 
-      <form id="postForm" class="panel" hidden>
-        <div class="panel-head">
-          <h2>📣 Post a shout-out</h2>
-          <button type="button" id="lockBtn" class="btn ghost">Lock pit lane</button>
+      <div id="unlocked" hidden>
+        <div class="section-head ruled">
+          <div>
+            <div class="label">Pit Lane · Open</div>
+            <h2 class="section-title">Post a shout-out</h2>
+          </div>
+          <button type="button" id="lockBtn" class="btn-outline">Lock pit lane</button>
         </div>
-        <div class="grid">
-          <label>Agent name *
-            <input name="agent" list="agentList" maxlength="60" required>
-          </label>
-          <label>Team
-            <input name="team" list="teamList" maxlength="40">
-          </label>
-          <label>Channel
-            <select name="channel" id="channelSelect"></select>
-          </label>
-          <label>Your name *
-            <input name="leader" maxlength="60" required>
-          </label>
-          <label class="span2">Customer verbatim *
-            <textarea name="verbatim" rows="4" maxlength="1000" required placeholder="“She fixed my issue in minutes and was so kind about it!”"></textarea>
-          </label>
-          <label>Customer (optional, no personal info)
-            <input name="customer" maxlength="60" placeholder="e.g. Customer in Ohio">
-          </label>
-          <label>Leader note (optional)
-            <input name="note" maxlength="280" placeholder="e.g. Textbook ownership!">
-          </label>
-        </div>
-        <datalist id="agentList"></datalist>
-        <datalist id="teamList"></datalist>
-        <div class="row">
-          <button class="btn big" type="submit">🏁 Wave the flag</button>
-          <p id="postMsg" class="msg" role="status"></p>
-        </div>
-        <p class="hint">To remove a post, use Manage shout-outs below or the Delete button on any card on the wall.</p>
-      </form>
 
-      <div id="managePanel" class="panel manage" hidden>
-        <div class="panel-head">
-          <h2>🧹 Manage shout-outs</h2>
-          <span id="manageCount" class="chip"></span>
+        <div class="pit-grid">
+          <form id="postForm" class="post-form" novalidate>
+            <label class="field">
+              <span class="label split"><span>Agent name</span><span>Required</span></span>
+              <input name="agent" list="agentList" maxlength="60" placeholder="Start typing a name" required>
+              <span class="field-err" data-for="agent" role="alert"></span>
+            </label>
+            <label class="field">
+              <span class="label split"><span>Team</span><span>Optional</span></span>
+              <input name="team" list="teamList" maxlength="40" placeholder="e.g. Team Apex">
+            </label>
+            <label class="field">
+              <span class="label split"><span>Your name</span><span>Required</span></span>
+              <input name="leader" maxlength="60" placeholder="Remembered on this browser" required>
+              <span class="field-err" data-for="leader" role="alert"></span>
+            </label>
+            <label class="field">
+              <span class="label">Channel</span>
+              <select name="channel" id="channelSelect"></select>
+            </label>
+            <label class="field full">
+              <span class="label split"><span>Customer verbatim</span><span>Required</span></span>
+              <textarea name="verbatim" rows="6" maxlength="1000" placeholder="Paste the customer’s words exactly as written." required></textarea>
+              <span class="split small"><span class="field-err" data-for="verbatim" role="alert"></span><span id="vCount" class="count">0 / 1,000</span></span>
+            </label>
+            <label class="field full">
+              <span class="label split"><span>Customer attribution</span><span>Optional</span></span>
+              <input name="customer" maxlength="60" placeholder="e.g. Customer in Ohio">
+              <span class="small">No personal info: no names, emails, phone or account numbers.</span>
+            </label>
+            <label class="field full">
+              <span class="label split"><span>Leader note</span><span id="nCount">0 / 280</span></span>
+              <input name="note" maxlength="280" placeholder="e.g. Textbook ownership.">
+            </label>
+            <div class="full form-foot">
+              <div id="postOk" class="banner-ok" role="status" hidden>
+                <span class="checker-chip light" aria-hidden="true"></span>
+                <span>Posted. <strong id="postOkName"></strong> is on the wall.</span>
+              </div>
+              <div id="postErr" class="inline-error boxed" role="alert" hidden><span class="err-tag">Error</span><span id="postErrMsg"></span></div>
+              <button type="submit" id="submitBtn" class="btn-solid big">
+                <span class="checker-chip light" aria-hidden="true"></span>
+                <span id="submitLabel">Wave the flag</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="manage">
+            <div class="manage-head">
+              <h3>Manage shout-outs</h3>
+              <span id="manageCount" class="small"></span>
+            </div>
+            <input id="manageSearch" type="search" placeholder="Agent, team, leader, or words from the verbatim" aria-label="Search posts">
+            <div class="manage-box">
+              <div id="manageEmpty" class="manage-empty" hidden></div>
+              <div id="manageList"></div>
+            </div>
+          </div>
         </div>
-        <label>Find a post
-          <input id="manageSearch" type="search" placeholder="Agent, team, leader, or words from the verbatim">
-        </label>
-        <ul id="manageList" class="manage-list"></ul>
-        <p id="manageEmpty" class="empty" hidden>No posts match.</p>
       </div>
     </section>
   </main>
 
-  <footer class="foot">
-    <div class="checker"></div>
-    <p>Keep it green. Keep it fast. Keep it kind. 🏎️💨</p>
+  <footer class="foot dark">
+    <div class="checker-strip" aria-hidden="true"></div>
+    <div class="foot-inner">
+      <div class="foot-line">Keep it green. Keep it fast. Keep it kind.</div>
+      <div class="foot-brand">
+        <span class="eyebrow-dim">JLR Confidential ©2026</span>
+        <img src="assets/jlr-logo.png" alt="JLR" class="logo small">
+      </div>
+    </div>
   </footer>
 
-  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <datalist id="agentList"></datalist>
+  <datalist id="teamList"></datalist>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+      <div class="modal-bar" aria-hidden="true"></div>
+      <div class="modal-body">
+        <div class="label">Pit Lane</div>
+        <h2 id="modalTitle" class="modal-title"></h2>
+        <p id="modalDesc" class="lede">This can’t be undone.</p>
+        <div id="modalSnip" class="modal-snip"></div>
+        <div id="modalErr" class="inline-error" role="alert" hidden><span class="err-tag">Error</span><span id="modalErrMsg"></span></div>
+        <div class="modal-actions">
+          <button type="button" id="modalCancel" class="btn-outline">Keep it</button>
+          <button type="button" id="modalConfirm" class="btn-solid">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bursts" class="bursts" aria-hidden="true"></div>
   <script src="app.js" type="module"></script>
 </body>
 </html>

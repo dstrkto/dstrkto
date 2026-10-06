@@ -6,17 +6,32 @@ see who's on pole position.
 
 ## Features
 
-- **The Wall**: shout-out cards with a unique car number and livery colors per agent, plus the
-  customer quote, an optional leader note, and team/channel tags.
+- **The Wall**: shout-out cards with a car number and livery colors per agent, the customer quote,
+  an optional pit wall note, and team/channel tags. Loading, empty and error states included.
 - **My call-outs**: pick your name (it's remembered in your browser) to open your "garage" with
   your call-outs, cheers, and all-time position. Click any name on a card to jump to that driver.
 - **Filters**: team, channel (Phone, Chat, Email, Social, SMS, Video), and free-text search.
-- **Cheers**: 🏁 🔥 🏆 reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
+- **Cheers**: Flag / On fire / Trophy reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
 - **Pole Position**: podium plus driver and team standings for the last 7 days, last 30 days, or all time.
-- **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to find and delete posted ones in **Manage shout-outs**.
+- **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to find and delete posted ones in **Manage shout-outs** (with a confirmation dialog).
 - Auto-refreshes every 60 seconds, so it can run on a team monitor.
 
 Design handoff brief: [`docs/design-brief.md`](docs/design-brief.md).
+
+## Design
+
+Styled with the **JLR Design System** (from the Design team's handoff): JLR Emeric fonts, the
+JLR Green colour story, sharp corners and hairline rules. Files in `public/`:
+
+- `jlr/colors_and_type.css`: design system tokens and `@font-face` rules (unmodified from the handoff)
+- `jlr/fonts/`: JLR Emeric ExtraLight, Regular and SemiBold
+- `assets/`: JLR monogram and the hero wheel photo
+
+To switch colour story, change the `palette-green-*` classes in `index.html`
+(`<body>` uses `-dark`, the header and intro use `-light`) to `palette-blue-*` or `palette-orange-*`.
+
+**Brand assets:** the fonts, logo and photo are JLR brand assets. This repository and the
+Netlify site are public, so anyone can download them. Confirm that's acceptable with JLR Brand.
 
 ## Stack
 
