@@ -19,15 +19,21 @@ export function json(body, status = 200) {
 }
 
 // Compares hashes so the comparison is constant-time regardless of input length.
+// Surrounding whitespace is ignored on both sides (a common copy/paste slip).
 function passcodeMatches(given, expected) {
+  expected = (expected || "").trim();
   if (!expected) return false;
-  const a = createHash("sha256").update(given || "").digest();
+  const a = createHash("sha256").update((given || "").trim()).digest();
   const b = createHash("sha256").update(expected).digest();
   return timingSafeEqual(a, b);
 }
 
 export function isLeader(req) {
   return passcodeMatches(req.headers.get("x-leader-passcode"), process.env.LEADER_PASSCODE);
+}
+
+export function agentPasscodeConfigured() {
+  return !!(process.env.AGENT_PASSCODE || "").trim();
 }
 
 // Agents may only submit nominations. Leaders can do anything agents can.
