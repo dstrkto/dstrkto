@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { CHANNELS, REACTIONS, clean, isLeader, json, key, listShoutouts, store, validId } from "../lib/common.mjs";
+import {
+  REACTIONS, editableFields, isLeader, json, key, listShoutouts, missingFields, readJson, store, validId,
+} from "../lib/common.mjs";
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -58,29 +60,5 @@ export default async (req) => {
 
   return json({ error: "Method not allowed." }, 405);
 };
-
-async function readJson(req) {
-  try {
-    return await req.json();
-  } catch {
-    return null;
-  }
-}
-
-function editableFields(body) {
-  return {
-    agent: clean(body.agent, 60),
-    team: clean(body.team, 40),
-    channel: CHANNELS.includes(body.channel) ? body.channel : "Phone",
-    verbatim: clean(body.verbatim, 1000),
-    customer: clean(body.customer, 60),
-    leader: clean(body.leader, 60),
-    note: clean(body.note, 280),
-  };
-}
-
-function missingFields(f) {
-  return !f.agent || !f.verbatim || !f.leader ? "Agent, verbatim, and leader name are required." : "";
-}
 
 export const config = { path: "/api/shoutouts" };

@@ -14,6 +14,10 @@ see who's on pole position.
 - **Cheers**: Flag / On fire / Trophy reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
 - **Pole Position**: podium plus driver and team standings for the last 7 days, last 30 days, or all time.
 - **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to edit or delete posted ones (from **Manage shout-outs** or the buttons on each card). Edits keep the original post date and cheers, and the card shows "edited".
+- **Nominate**: agents enter a separate team passcode to nominate a teammate. Nominations wait in
+  **Pending approval** in Pit Lane, where a leader can approve, edit (and add a pit wall note) or
+  reject them. Approved posts show "Nominated by {name}". The team passcode can't open Pit Lane,
+  edit or delete anything.
 - Auto-refreshes every 60 seconds, so it can run on a team monitor.
 
 Design handoff brief: [`docs/design-brief.md`](docs/design-brief.md).
@@ -36,9 +40,10 @@ Netlify site are public, so anyone can download them. Confirm that's acceptable 
 ## Stack
 
 - Static site in `public/` (plain HTML/CSS/JS, no build step).
-- Netlify Functions in `netlify/functions/` (`/api/shoutouts`, `/api/react`, `/api/verify`).
+- Netlify Functions in `netlify/functions/` (`/api/shoutouts`, `/api/nominations`, `/api/react`, `/api/verify`).
 - Netlify Blobs store `wall-of-heroes`,
-  one JSON entry per shout-out. No external database.
+  one JSON entry per shout-out under `shoutout/`, nominations awaiting approval under `pending/`.
+  No external database.
 
 ## Deploy to Netlify
 
@@ -46,11 +51,13 @@ Netlify site are public, so anyone can download them. Confirm that's acceptable 
 2. In Netlify: **Add new project → Import an existing project**, then pick the repo.
    - If the app lives in a subfolder (e.g. `wall-of-heroes/`), set **Base directory** to that folder.
    - Build command: leave empty. Publish directory and functions are read from `netlify.toml`.
-3. In the project's environment variable settings, add `LEADER_PASSCODE` with a value
-   of your choice, scoped to Functions.
+3. In the project's environment variable settings, add (scoped to Functions):
+   - `LEADER_PASSCODE`: for leaders (Pit Lane: post, edit, delete, approve).
+   - `AGENT_PASSCODE`: the team passcode for the Nominate form. Use a different value. If it's
+     not set, only leaders can submit nominations.
 4. Deploy. Netlify Blobs needs no extra setup on Netlify-hosted functions.
 
-Change `LEADER_PASSCODE` whenever leaders change, then redeploy so the functions pick up the new value.
+Change either passcode whenever people leave, then redeploy so the functions pick up the new value.
 
 ## Local development
 
@@ -71,14 +78,19 @@ LEADER_PASSCODE=letmein netlify dev
 | PUT | `/api/shoutouts?id=…` | `x-leader-passcode` | same fields as POST; replaces text fields only, keeps `id`, `createdAt`, `reactions`, adds `updatedAt` |
 | DELETE | `/api/shoutouts?id=…` | `x-leader-passcode` | |
 | POST | `/api/react` | none | `{ id, reaction: "flag" \| "fire" \| "trophy", delta?: 1 \| -1 }` |
-| POST | `/api/verify` | `x-leader-passcode` | checks the passcode |
+| POST | `/api/nominations` | `x-agent-passcode` (or leader) | `{ agent, team?, channel?, verbatim, customer?, leader }`; queued for approval |
+| GET | `/api/nominations` | `x-leader-passcode` | returns `{ pending: [...] }` |
+| PUT | `/api/nominations?id=…` | `x-leader-passcode` | edit a pending nomination (can add `note`) |
+| POST | `/api/nominations?id=…&action=approve` | `x-leader-passcode` | publishes it to the wall |
+| DELETE | `/api/nominations?id=…` | `x-leader-passcode` | rejects it |
+| POST | `/api/verify` | `x-leader-passcode` | checks the leader passcode (`?role=agent` checks the team passcode) |
 
 ## Things to know
 
 - **The wall is public to anyone with the URL.** Don't post customer names, phone numbers, account
   numbers, or other personal data. If the whole site needs to be private, check which
   site-protection options your Netlify plan includes.
-- The leader passcode is shared, not per person. "Flagged by" is whatever the leader types.
+- Both passcodes are shared, not per person. "Flagged by" / "Nominated by" is whatever the person types.
 - After unlocking, the passcode stays in the browser's `sessionStorage` until the tab closes or
   "Lock pit lane" is clicked.
 - Cheers aren't tied to identity. A determined person could inflate counts, which is fine for a

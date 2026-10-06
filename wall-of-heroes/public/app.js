@@ -22,8 +22,11 @@ const state = {
   passcode: "",
   myReactions: {},
   saving: new Set(),
-  pendingDelete: null,
+  confirm: null,
   editing: null,
+  editKind: "live",
+  agentPass: "",
+  pending: [],
 };
 
 // ---------- helpers ----------
@@ -106,6 +109,7 @@ const fmtDate = (iso) =>
 async function api(path, options = {}) {
   const headers = { "content-type": "application/json", ...(options.headers || {}) };
   if (state.passcode) headers["x-leader-passcode"] = state.passcode;
+  if (state.agentPass) headers["x-agent-passcode"] = state.agentPass;
   const res = await fetch(path, { ...options, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { status: res.status });
@@ -165,6 +169,8 @@ function filtered() {
   );
 }
 
+const byLabel = (s) => (s.source === "agent" ? "Nominated by" : "Flagged by");
+
 const rowActions = (s) => h("div", { class: "row-actions" },
   h("button", { class: "btn-small", "aria-label": `Edit shout-out for ${s.agent}`, onclick: () => startEdit(s) }, "Edit"),
   h("button", { class: "btn-small", "aria-label": `Delete shout-out for ${s.agent}`, onclick: () => askDelete(s) }, "Delete"));
@@ -198,7 +204,7 @@ function card(s, i) {
       ),
       s.note && h("div", { class: "note" }, h("div", { class: "label" }, "Pit wall note"), h("div", {}, s.note)),
       h("div", { class: "card-foot" },
-        h("div", { class: "flagged" }, "Flagged by ", h("b", {}, s.leader), ` · ${timeAgo(s.createdAt)}${s.updatedAt ? " · edited" : ""}`),
+        h("div", { class: "flagged" }, `${byLabel(s)} `, h("b", {}, s.leader), ` · ${timeAgo(s.createdAt)}${s.updatedAt ? " · edited" : ""}`),
         h("div", { class: "reacts", role: "group", "aria-label": "Cheers" },
           REACTIONS.map((r) => {
             const on = mine.includes(r.key);
@@ -345,8 +351,30 @@ function renderManage() {
       h("div", { class: "mrow-main" },
         h("div", { class: "mrow-title" }, h("b", {}, s.agent), [s.team, s.channel].filter(Boolean).map((t) => ` · ${t}`).join("")),
         h("div", { class: "mrow-snip" }, snip(s.verbatim)),
-        h("div", { class: "small" }, `Posted by ${s.leader} · ${fmtDate(s.createdAt)}`)),
+        h("div", { class: "small" }, `${byLabel(s)} ${s.leader} · ${fmtDate(s.createdAt)}`)),
       rowActions(s))));
+}
+
+function renderPending() {
+  if (!state.passcode) return;
+  const list = state.pending;
+  $("#pendingCount").textContent = list.length ? plural(list.length, "nomination") : "";
+  $("#pendingEmpty").hidden = list.length > 0;
+  $("#pendingBadge").textContent = list.length;
+  $("#pendingBadge").hidden = list.length === 0;
+  $("#pendingList").replaceChildren(...list.map((n) =>
+    h("div", { class: "mrow pending", style: liveryVars(n.agent) },
+      h("div", { class: "stripe", "aria-hidden": "true" }),
+      h("div", { class: "mrow-main" },
+        h("div", { class: "mrow-title" }, h("b", {}, n.agent), [n.team, n.channel].filter(Boolean).map((t) => ` · ${t}`).join("")),
+        h("div", { class: "mrow-snip" }, n.verbatim),
+        n.customer && h("div", { class: "small" }, `From: ${n.customer}`),
+        n.note && h("div", { class: "small" }, `Pit wall note: ${n.note}`),
+        h("div", { class: "small" }, `Nominated by ${n.leader} · ${fmtDate(n.submittedAt)}${n.updatedAt ? " · edited" : ""}`)),
+      h("div", { class: "row-actions" },
+        h("button", { class: "btn-small go", "aria-label": `Approve nomination for ${n.agent}`, onclick: (e) => approve(n, e.currentTarget) }, "Approve"),
+        h("button", { class: "btn-small", "aria-label": `Edit nomination for ${n.agent}`, onclick: () => startEdit(n, "pending") }, "Edit"),
+        h("button", { class: "btn-small", "aria-label": `Reject nomination for ${n.agent}`, onclick: () => askReject(n) }, "Reject")))));
 }
 
 function render() {
@@ -356,6 +384,7 @@ function render() {
   renderWall();
   renderLeaderboard();
   renderManage();
+  renderPending();
 }
 
 // ---------- actions ----------
@@ -396,41 +425,90 @@ async function react(s, key, btn) {
   }
 }
 
-// Delete confirmation modal
-function askDelete(s) {
-  state.pendingDelete = s;
-  $("#modalTitle").textContent = `Delete this shout-out for ${s.agent}?`;
-  $("#modalSnip").textContent = `“${snip(s.verbatim)}”`;
+// Confirmation modal, used for deleting posts and rejecting nominations.
+function askConfirm({ title, snipText, confirmLabel, busyLabel, run }) {
+  state.confirm = { confirmLabel, busyLabel, run };
+  $("#modalTitle").textContent = title;
+  $("#modalSnip").textContent = `“${snip(snipText)}”`;
   $("#modalErr").hidden = true;
-  setDeleting(false);
+  setBusy(false);
   $("#modal").hidden = false;
   $("#modalCancel").focus();
 }
 function closeModal() {
   if ($("#modalConfirm").disabled) return;
   $("#modal").hidden = true;
-  state.pendingDelete = null;
+  state.confirm = null;
 }
-function setDeleting(on) {
+function setBusy(on) {
   $("#modalConfirm").disabled = on;
-  $("#modalConfirm").textContent = on ? "Deleting…" : "Delete";
+  $("#modalConfirm").textContent = on ? state.confirm.busyLabel : state.confirm.confirmLabel;
 }
-async function confirmDelete() {
-  const s = state.pendingDelete;
-  if (!s) return;
-  setDeleting(true);
+async function runConfirm() {
+  if (!state.confirm) return;
+  setBusy(true);
   try {
-    await api(`/api/shoutouts?id=${encodeURIComponent(s.id)}`, { method: "DELETE" });
-    state.shoutouts = state.shoutouts.filter((x) => x.id !== s.id);
-    if (state.editing?.id === s.id) exitEdit();
-    setDeleting(false);
+    await state.confirm.run();
+    setBusy(false);
     closeModal();
     render();
   } catch (err) {
-    setDeleting(false);
+    setBusy(false);
     $("#modalErrMsg").textContent = err.message;
     $("#modalErr").hidden = false;
     if (err.status === 401) { closeModal(); setLeaderMode(""); }
+    if (err.status === 404) { closeModal(); load(); loadPending(); }
+  }
+}
+
+function askDelete(s) {
+  askConfirm({
+    title: `Delete this shout-out for ${s.agent}?`, snipText: s.verbatim, confirmLabel: "Delete", busyLabel: "Deleting…",
+    run: async () => {
+      await api(`/api/shoutouts?id=${encodeURIComponent(s.id)}`, { method: "DELETE" });
+      state.shoutouts = state.shoutouts.filter((x) => x.id !== s.id);
+      if (state.editing?.id === s.id) exitEdit();
+    },
+  });
+}
+
+function askReject(n) {
+  askConfirm({
+    title: `Reject this nomination for ${n.agent}?`, snipText: n.verbatim, confirmLabel: "Reject", busyLabel: "Rejecting…",
+    run: async () => {
+      await api(`/api/nominations?id=${encodeURIComponent(n.id)}`, { method: "DELETE" });
+      state.pending = state.pending.filter((x) => x.id !== n.id);
+      if (state.editing?.id === n.id) exitEdit();
+    },
+  });
+}
+
+async function approve(n, btn) {
+  btn.disabled = true;
+  try {
+    const { shoutout } = await api(`/api/nominations?id=${encodeURIComponent(n.id)}&action=approve`, { method: "POST" });
+    state.pending = state.pending.filter((x) => x.id !== n.id);
+    state.shoutouts.unshift(shoutout);
+    if (state.editing?.id === n.id) exitEdit();
+    const r = btn.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top, false);
+    render();
+  } catch (err) {
+    btn.disabled = false;
+    alert(err.message);
+    if (err.status === 401) setLeaderMode("");
+    if (err.status === 404 || err.status === 409) { load(); loadPending(); }
+  }
+}
+
+async function loadPending() {
+  if (!state.passcode) return;
+  try {
+    const { pending } = await api("/api/nominations");
+    state.pending = pending;
+    renderPending();
+  } catch (err) {
+    if (err.status === 401) setLeaderMode("");
   }
 }
 
@@ -460,8 +538,20 @@ function setLeaderMode(passcode) {
   sessionSet("woh-pass", passcode);
   $("#locked").hidden = !!passcode;
   $("#unlocked").hidden = !passcode;
+  if (!passcode) { state.pending = []; $("#pendingBadge").hidden = true; }
+  setAgentMode(state.agentPass);
   renderWall();
   renderManage();
+  loadPending();
+}
+
+// The team passcode only unlocks the Nominate form. An unlocked leader can use it too.
+function setAgentMode(pass) {
+  state.agentPass = pass;
+  sessionSet("woh-agent-pass", pass);
+  const open = !!(pass || state.passcode);
+  $("#nomLocked").hidden = open;
+  $("#nomOpen").hidden = !open;
 }
 
 // ---------- post form ----------
@@ -473,9 +563,25 @@ function setFieldError(form, name, msg) {
 
 function updateCounts(form) {
   const v = form.verbatim.value.length;
-  $("#vCount").textContent = `${fmt(v)} / 1,000`;
-  $("#vCount").classList.toggle("near", v > 900);
-  $("#nCount").textContent = `${fmt(form.note.value.length)} / 280`;
+  const vCount = form.id === "nomForm" ? $("#nomVCount") : $("#vCount");
+  vCount.textContent = `${fmt(v)} / 1,000`;
+  vCount.classList.toggle("near", v > 900);
+  if (form.note) $("#nCount").textContent = `${fmt(form.note.value.length)} / 280`;
+}
+
+const REQUIRED = { agent: "Add the agent’s name.", leader: "Add your name.", verbatim: "Add the verbatim." };
+
+// Shows inline errors for empty required fields; returns false (and focuses the first) if any.
+function validate(form, data) {
+  let firstBad = null;
+  for (const [k, msg] of Object.entries(REQUIRED)) {
+    const bad = !String(data[k] || "").trim();
+    const text = k === "agent" && form.id === "nomForm" ? "Add your teammate’s name." : msg;
+    setFieldError(form, k, bad ? text : "");
+    if (bad && !firstBad) firstBad = form.elements[k];
+  }
+  if (firstBad) firstBad.focus();
+  return !firstBad;
 }
 
 const submitText = () => (state.editing ? "Save changes" : "Wave the flag");
@@ -485,10 +591,12 @@ function showPostOk(...parts) {
   $("#postOk").hidden = false;
 }
 
-// Edit mode reuses the post form, prefilled with the shout-out's current text.
-function startEdit(s) {
+// Edit mode reuses the post form, prefilled with the post's current text.
+// kind is "live" for a shout-out on the wall, "pending" for a nomination awaiting approval.
+function startEdit(s, kind = "live") {
   const form = $("#postForm");
   state.editing = s;
+  state.editKind = kind;
   showView("pit");
   for (const k of ["agent", "team", "channel", "leader", "verbatim", "customer", "note"]) {
     form.elements[k].value = s[k] || "";
@@ -497,8 +605,8 @@ function startEdit(s) {
   updateCounts(form);
   $("#postOk").hidden = true;
   $("#postErr").hidden = true;
-  $("#pitEyebrow").textContent = "Pit Lane · Editing";
-  $("#pitTitle").textContent = "Edit shout-out";
+  $("#pitEyebrow").textContent = kind === "pending" ? "Pit Lane · Reviewing" : "Pit Lane · Editing";
+  $("#pitTitle").textContent = kind === "pending" ? "Edit nomination" : "Edit shout-out";
   $("#submitLabel").textContent = submitText();
   $("#cancelEdit").hidden = false;
   form.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
@@ -508,6 +616,7 @@ function startEdit(s) {
 function exitEdit() {
   const form = $("#postForm");
   state.editing = null;
+  state.editKind = "live";
   form.reset();
   form.leader.value = storageGet("woh-leader", "");
   ["agent", "leader", "verbatim"].forEach((k) => setFieldError(form, k, ""));
@@ -522,23 +631,24 @@ async function submitPost(e) {
   e.preventDefault();
   const form = e.target;
   const data = Object.fromEntries(new FormData(form));
-  const required = { agent: "Add the agent’s name.", leader: "Add your name.", verbatim: "Add the verbatim." };
-  let firstBad = null;
-  for (const [k, msg] of Object.entries(required)) {
-    const bad = !String(data[k] || "").trim();
-    setFieldError(form, k, bad ? msg : "");
-    if (bad && !firstBad) firstBad = form.elements[k];
-  }
   $("#postOk").hidden = true;
   $("#postErr").hidden = true;
-  if (firstBad) { firstBad.focus(); return; }
+  if (!validate(form, data)) return;
 
   const editing = state.editing;
+  const kind = state.editKind;
   const btn = $("#submitBtn");
   btn.disabled = true;
   $("#submitLabel").textContent = editing ? "Saving…" : "Waving…";
   try {
-    if (editing) {
+    if (editing && kind === "pending") {
+      const { nomination } = await api(`/api/nominations?id=${encodeURIComponent(editing.id)}`, {
+        method: "PUT", body: JSON.stringify(data),
+      });
+      state.pending = state.pending.map((x) => (x.id === nomination.id ? nomination : x));
+      exitEdit();
+      showPostOk("Saved. ", h("strong", {}, nomination.agent), "’s nomination is still waiting for approval.");
+    } else if (editing) {
       const { shoutout } = await api(`/api/shoutouts?id=${encodeURIComponent(editing.id)}`, {
         method: "PUT", body: JSON.stringify(data),
       });
@@ -564,10 +674,45 @@ async function submitPost(e) {
         : `Couldn’t post to the pit wall. ${err.message}`;
     $("#postErr").hidden = false;
     if (err.status === 401) setLeaderMode("");
-    if (err.status === 404) { exitEdit(); load(); }
+    if (err.status === 404) { exitEdit(); load(); loadPending(); }
   } finally {
     btn.disabled = false;
     $("#submitLabel").textContent = submitText();
+  }
+}
+
+// ---------- nominations (agents) ----------
+async function submitNomination(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  $("#nomOk").hidden = true;
+  $("#nomErr").hidden = true;
+  if (!validate(form, data)) return;
+
+  const btn = $("#nomSubmit");
+  btn.disabled = true;
+  $("#nomSubmitLabel").textContent = "Sending…";
+  try {
+    await api("/api/nominations", { method: "POST", body: JSON.stringify(data) });
+    storageSet("woh-nominator", data.leader.trim());
+    form.reset();
+    form.leader.value = data.leader.trim();
+    updateCounts(form);
+    $("#nomOkText").replaceChildren("Sent. A leader will review your shout-out for ", h("strong", {}, data.agent.trim()),
+      " before it goes on the wall.");
+    $("#nomOk").hidden = false;
+    burst(window.innerWidth / 2, window.innerHeight * 0.45, true);
+    loadPending();
+  } catch (err) {
+    $("#nomErrMsg").textContent = err.status === 401
+      ? "The team passcode has changed. Enter the new one to continue."
+      : `Couldn’t send your shout-out. ${err.message}`;
+    $("#nomErr").hidden = false;
+    if (err.status === 401) setAgentMode("");
+  } finally {
+    btn.disabled = false;
+    $("#nomSubmitLabel").textContent = "Send for approval";
   }
 }
 
@@ -579,6 +724,7 @@ function init() {
 
   fillSelect($("#fChannel"), CHANNELS, "All channels", "");
   $("#channelSelect").replaceChildren(...CHANNELS.map((c) => h("option", { value: c }, c)));
+  $("#nomChannel").replaceChildren(...CHANNELS.map((c) => h("option", { value: c }, c)));
 
   document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
   document.querySelectorAll("[data-period]").forEach((b) =>
@@ -634,17 +780,45 @@ function init() {
   form.leader.value = storageGet("woh-leader", "");
   $("#manageSearch").addEventListener("input", renderManage);
 
+  $("#nomUnlockForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("#nomPasscode");
+    const prev = state.agentPass;
+    try {
+      state.agentPass = input.value;
+      await api("/api/verify?role=agent", { method: "POST" });
+      input.value = "";
+      input.removeAttribute("aria-invalid");
+      $("#nomPassErr").hidden = true;
+      setAgentMode(state.agentPass);
+    } catch (err) {
+      state.agentPass = prev;
+      $("#nomPassErrMsg").textContent = err.message;
+      $("#nomPassErr").hidden = false;
+      input.setAttribute("aria-invalid", "true");
+    }
+  });
+  $("#nomPasscode").addEventListener("input", () => { $("#nomPassErr").hidden = true; $("#nomPasscode").removeAttribute("aria-invalid"); });
+  const nomForm = $("#nomForm");
+  nomForm.addEventListener("submit", submitNomination);
+  nomForm.addEventListener("input", (e) => {
+    updateCounts(nomForm);
+    if (e.target.name && nomForm.querySelector(`.field-err[data-for="${e.target.name}"]`)) setFieldError(nomForm, e.target.name, "");
+  });
+  nomForm.leader.value = storageGet("woh-nominator", "");
+
   $("#modal").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeModal(); });
   $("#modalCancel").addEventListener("click", closeModal);
-  $("#modalConfirm").addEventListener("click", confirmDelete);
+  $("#modalConfirm").addEventListener("click", runConfirm);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
 
   showView("wall");
+  state.agentPass = sessionGet("woh-agent-pass");
   setLeaderMode(sessionGet("woh-pass"));
   render();
   load();
   // Refresh periodically so a wall left open on a team monitor stays current.
-  setInterval(() => { if (!document.hidden) load(); }, 60000);
+  setInterval(() => { if (!document.hidden) { load(); loadPending(); } }, 60000);
 }
 
 init();

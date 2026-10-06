@@ -44,7 +44,8 @@
     <div class="tabs-inner" role="tablist">
       <button role="tab" class="tab" data-view="wall" aria-selected="true">The Wall</button>
       <button role="tab" class="tab" data-view="pole" aria-selected="false">Pole Position</button>
-      <button role="tab" class="tab" data-view="pit" aria-selected="false">Pit Lane <span class="tag-leaders">Leaders</span></button>
+      <button role="tab" class="tab" data-view="nominate" aria-selected="false">Nominate</button>
+      <button role="tab" class="tab" data-view="pit" aria-selected="false">Pit Lane <span class="tag-leaders">Leaders</span><span id="pendingBadge" class="tag-count" hidden></span></button>
     </div>
   </nav>
 
@@ -127,6 +128,75 @@
       </div>
     </section>
 
+    <!-- ================= NOMINATE (agents) ================= -->
+    <section id="view-nominate" class="view" aria-label="Nominate a teammate" hidden>
+      <div id="nomLocked" class="locked">
+        <div class="locked-art dark">
+          <div class="lights small" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="section-title">Nominate<br>a teammate</div>
+        </div>
+        <form id="nomUnlockForm" class="locked-form">
+          <p class="lede">Seen a teammate go above and beyond? Enter the team passcode to send a shout-out. A leader reviews it before it goes on the wall.</p>
+          <label class="field">
+            <span class="label">Team passcode</span>
+            <input id="nomPasscode" type="password" autocomplete="current-password" required aria-describedby="nomPassErr" class="input-lg passcode">
+          </label>
+          <div id="nomPassErr" class="inline-error" role="alert" hidden><span class="err-tag">Error</span><span id="nomPassErrMsg">Wrong passcode.</span></div>
+          <button type="submit" class="btn-solid">Continue</button>
+        </form>
+      </div>
+
+      <div id="nomOpen" hidden>
+        <div class="section-head ruled">
+          <div>
+            <div class="label">Nominate</div>
+            <h2 class="section-title">Nominate a teammate</h2>
+          </div>
+        </div>
+        <form id="nomForm" class="post-form narrow" novalidate>
+          <label class="field">
+            <span class="label split"><span>Teammate’s name</span><span>Required</span></span>
+            <input name="agent" list="agentList" maxlength="60" placeholder="Start typing a name" required>
+            <span class="field-err" data-for="agent" role="alert"></span>
+          </label>
+          <label class="field">
+            <span class="label split"><span>Team</span><span>Optional</span></span>
+            <input name="team" list="teamList" maxlength="40" placeholder="e.g. Team Apex">
+          </label>
+          <label class="field">
+            <span class="label split"><span>Your name</span><span>Required</span></span>
+            <input name="leader" maxlength="60" placeholder="Remembered on this browser" required>
+            <span class="field-err" data-for="leader" role="alert"></span>
+          </label>
+          <label class="field">
+            <span class="label">Channel</span>
+            <select name="channel" id="nomChannel"></select>
+          </label>
+          <label class="field full">
+            <span class="label split"><span>Verbatim</span><span>Required</span></span>
+            <textarea name="verbatim" rows="6" maxlength="1000" placeholder="What did they do, or what did the customer say? Use their words where you can." required></textarea>
+            <span class="split small"><span class="field-err" data-for="verbatim" role="alert"></span><span id="nomVCount" class="count">0 / 1,000</span></span>
+          </label>
+          <label class="field full">
+            <span class="label split"><span>From</span><span>Optional</span></span>
+            <input name="customer" maxlength="60" placeholder="e.g. Customer in Ohio, Peer">
+            <span class="small">For customers, no personal info: no names, emails, phone or account numbers.</span>
+          </label>
+          <div class="full form-foot">
+            <div id="nomOk" class="banner-ok" role="status" hidden>
+              <span class="checker-chip light" aria-hidden="true"></span>
+              <span id="nomOkText"></span>
+            </div>
+            <div id="nomErr" class="inline-error boxed" role="alert" hidden><span class="err-tag">Error</span><span id="nomErrMsg"></span></div>
+            <button type="submit" id="nomSubmit" class="btn-solid big">
+              <span class="checker-chip light" aria-hidden="true"></span>
+              <span id="nomSubmitLabel">Send for approval</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <!-- ================= PIT LANE ================= -->
     <section id="view-pit" class="view" aria-label="Pit Lane" hidden>
       <div id="locked" class="locked">
@@ -202,6 +272,18 @@
             </div>
           </form>
 
+          <div class="pit-side">
+          <div class="manage" id="pendingPanel">
+            <div class="manage-head">
+              <h3>Pending approval</h3>
+              <span id="pendingCount" class="small"></span>
+            </div>
+            <div class="manage-box">
+              <div id="pendingEmpty" class="manage-empty">No nominations waiting.</div>
+              <div id="pendingList"></div>
+            </div>
+          </div>
+
           <div class="manage">
             <div class="manage-head">
               <h3>Manage shout-outs</h3>
@@ -212,6 +294,7 @@
               <div id="manageEmpty" class="manage-empty" hidden></div>
               <div id="manageList"></div>
             </div>
+          </div>
           </div>
         </div>
       </div>
