@@ -11,7 +11,8 @@ see who's on pole position.
 - **My call-outs**: pick your name (it's remembered in your browser) to open your "garage" with
   your call-outs, cheers, and all-time position. Click any name on a card to jump to that driver.
 - **Filters**: team, channel (Phone, Chat, Email, Social, SMS, Video), and free-text search.
-- **Cheers**: Flag / On fire / Trophy reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
+- **Cheers**: Flag / On fire / Trophy reactions anyone can toggle. "Cheers" totals are the three added together;
+  the header, garage and Pole Position also show the count per button. Counts are shared; each browser remembers its own toggles.
 - **Pole Position**: podium plus driver and team standings for the last 7 days, last 30 days, or all time.
 - **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to edit or delete posted ones (from **Manage shout-outs** or the buttons on each card). Edits keep the original post date and cheers, and the card shows "edited".
 - **Nominate**: agents enter a separate team passcode to nominate a teammate. Nominations wait in

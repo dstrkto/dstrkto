@@ -36,7 +36,7 @@
       <div class="stat"><b id="statTotal">0</b><span>Shout-outs</span></div>
       <div class="stat"><b id="statDrivers">0</b><span>Drivers on the board</span></div>
       <div class="stat"><b id="statWeek">0</b><span>Last 7 days</span></div>
-      <div class="stat"><b id="statCheers">0</b><span>Cheers</span></div>
+      <div class="stat"><b id="statCheers">0</b><span>Cheers</span><div id="statCheersBreakdown" class="stat-rx"></div></div>
     </div>
   </header>
 
@@ -99,6 +99,11 @@
         <div>
           <div class="label">Leaderboard</div>
           <h2 class="section-title">Pole Position</h2>
+          <p class="rx-legend">Cheers are the
+            <span class="rx-key"><span class="mark flag" aria-hidden="true"></span>Flag</span>,
+            <span class="rx-key"><span class="mark fire" aria-hidden="true"></span>On fire</span> and
+            <span class="rx-key"><span class="mark trophy" aria-hidden="true"></span>Trophy</span>
+            buttons on each post, added together.</p>
         </div>
         <div class="segmented" role="radiogroup" aria-label="Period">
           <button role="radio" data-period="7" aria-checked="true">Last 7 days</button>
@@ -124,7 +129,7 @@
             <ol id="teamStandings" class="standings"></ol>
           </div>
         </div>
-        <p class="footnote">Ranked by call-outs, then cheers, then name.</p>
+        <p class="footnote">Ranked by call-outs (posts about the driver), then total cheers, then name. Counts under each name show cheers by button.</p>
       </div>
     </section>
 

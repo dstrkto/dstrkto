@@ -88,7 +88,13 @@ const liveryVars = (name) => {
 const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const fmt = (n) => n.toLocaleString("en-GB");
 const plural = (n, word) => `${fmt(n)} ${word}${n === 1 ? "" : "s"}`;
-const cheers = (s) => Object.values(s.reactions || {}).reduce((a, b) => a + b, 0);
+// "Cheers" is the total of the three reaction buttons (Flag + On fire + Trophy).
+const cheers = (s) => REACTIONS.reduce((n, r) => n + (s.reactions?.[r.key] || 0), 0);
+function sumReactions(items) {
+  const t = Object.fromEntries(REACTIONS.map((r) => [r.key, 0]));
+  for (const s of items) for (const r of REACTIONS) t[r.key] += s.reactions?.[r.key] || 0;
+  return t;
+}
 const snip = (text, max = 140) => (text.length > max ? `${text.slice(0, max).trimEnd()}…` : text);
 const withinDays = (iso, days) => !days || Date.now() - new Date(iso).getTime() < days * DAY;
 const uniqueSorted = (arr) =>
@@ -175,6 +181,12 @@ const rowActions = (s) => h("div", { class: "row-actions" },
   h("button", { class: "btn-small", "aria-label": `Edit shout-out for ${s.agent}`, onclick: () => startEdit(s) }, "Edit"),
   h("button", { class: "btn-small", "aria-label": `Delete shout-out for ${s.agent}`, onclick: () => askDelete(s) }, "Delete"));
 
+// Per-button cheer counts, using the same square markers as the buttons on each post.
+const breakdown = (totals) => h("span", {
+  class: "rx", "aria-label": REACTIONS.map((r) => `${r.label} ${totals[r.key]}`).join(", "),
+}, REACTIONS.map((r) => h("span", { title: r.label },
+  h("span", { class: `mark ${r.key}`, "aria-hidden": "true" }), h("span", { "aria-hidden": "true" }, fmt(totals[r.key])))));
+
 const plate = (name, size = "") =>
   h("div", { class: `plate ${size}`, style: liveryVars(name), "aria-hidden": "true" }, initials(name));
 
@@ -228,6 +240,7 @@ function renderStats() {
   $("#statDrivers").textContent = fmt(uniqueSorted(all.map((s) => s.agent)).length);
   $("#statWeek").textContent = fmt(all.filter((s) => withinDays(s.createdAt, 7)).length);
   $("#statCheers").textContent = fmt(all.reduce((n, s) => n + cheers(s), 0));
+  $("#statCheersBreakdown").replaceChildren(breakdown(sumReactions(all)));
 }
 
 function fillSelect(sel, values, allLabel, current) {
@@ -264,6 +277,7 @@ function renderGarage() {
       h("div", { class: "garage-sub" }, mine.length
         ? `${plural(mine.length, "call-out")} · ${plural(mine.reduce((n, s) => n + cheers(s), 0), "cheer")}`
         : "No call-outs yet. Your first checkered flag is coming."),
+      mine.length > 0 && breakdown(sumReactions(mine)),
       h("div", { class: "badges" },
         pos > 0 && mine.length > 0 && h("span", { class: "badge" }, `P${pos} all-time`),
         week > 0 && h("span", { class: "badge" }, `${week} this week`),
@@ -297,9 +311,10 @@ function standings(items, field) {
     const label = s[field];
     if (!label) continue;
     const k = label.toLowerCase();
-    const row = map.get(k) || { label, count: 0, cheers: 0 };
+    const row = map.get(k) || { label, count: 0, cheers: 0, items: [] };
     row.count++;
     row.cheers += cheers(s);
+    row.items.push(s);
     map.set(k, row);
   }
   return [...map.values()].sort((a, b) => b.count - a.count || b.cheers - a.cheers || a.label.localeCompare(b.label));
@@ -310,9 +325,9 @@ function renderBoard(el, rows) {
   el.replaceChildren(...(rows.length
     ? rows.slice(0, 15).map((r, i) => h("li", {},
         h("span", { class: "p" }, `P${i + 1}`),
-        h("span", { class: "nm", title: r.label }, r.label),
+        h("span", { class: "nm-wrap" }, h("span", { class: "nm", title: r.label }, r.label), breakdown(sumReactions(r.items))),
         h("span", { class: "bar", "aria-hidden": "true" }, h("span", { style: `width:${Math.max(4, (r.count / max) * 100)}%` })),
-        h("span", { class: "ct", title: plural(r.cheers, "cheer") }, r.count)))
+        h("span", { class: "ct", title: plural(r.count, "call-out") }, r.count)))
     : [h("li", { class: "none" }, "No entries in this period.")]));
 }
 
@@ -328,7 +343,8 @@ function renderLeaderboard() {
       d && h("div", { class: "step-who" },
         plate(d.label, i === 0 ? "lg" : "md"),
         h("div", { class: "step-name" }, d.label),
-        h("div", { class: "step-sub" }, `${plural(d.count, "call-out")} · ${plural(d.cheers, "cheer")}`)),
+        h("div", { class: "step-sub" }, `${plural(d.count, "call-out")} · ${plural(d.cheers, "cheer")}`),
+        breakdown(sumReactions(d.items))),
       h("div", { class: `block p${i + 1}${d ? "" : " empty"}`, "aria-label": d ? `Position ${i + 1}` : `Position ${i + 1}: open` },
         h("div", { class: "pos" }, i + 1)));
   }));

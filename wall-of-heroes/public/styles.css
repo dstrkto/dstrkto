@@ -440,3 +440,18 @@ blockquote { margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .btn-small.go:hover { opacity: 0.7; }
 .mrow.pending { background: var(--jlr-bone); }
 .pending .row-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 180px; }
+
+/* ---------- Cheers breakdown (matches the reaction buttons) ---------- */
+.rx { display: inline-flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 13px; color: var(--jlr-graphite); font-variant-numeric: tabular-nums; }
+.rx > span { display: inline-flex; align-items: center; gap: 6px; }
+.rx .mark { width: 10px; height: 10px; }
+.rx-legend { font-size: 15px; color: var(--jlr-graphite); line-height: 1.8; max-width: 560px; }
+.rx-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--jlr-ink); white-space: nowrap; }
+.stat-rx { margin-top: 4px; }
+.stat-rx .rx { color: var(--jlr-mist); font-size: 12px; }
+.stat-rx .mark { border-color: var(--jlr-white); }
+.nm-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 6px 0; }
+.nm-wrap .rx { font-size: 12px; gap: 10px; }
+.step-who .rx { justify-content: center; }
+.garage-main .rx { font-size: 14px; }
+.stat .stat-rx span { letter-spacing: normal; text-transform: none; }
