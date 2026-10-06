@@ -68,7 +68,14 @@ function hash(str) {
   for (const ch of str.toLowerCase()) x = (x * 31 + ch.codePointAt(0)) >>> 0;
   return x;
 }
-const carNumber = (name) => 2 + (hash(name) % 98);
+// First letter of the first and last word ("Audrey Scolny" -> "AS"), skipping punctuation.
+function initials(name) {
+  const words = name.trim().split(/\s+/)
+    .map((w) => w.match(/[\p{L}\p{N}]/u)?.[0])
+    .filter(Boolean);
+  if (!words.length) return "?";
+  return (words.length > 1 ? words[0] + words[words.length - 1] : words[0]).toUpperCase();
+}
 const livery = (name) => LIVERIES[(hash(name) >>> 4) % LIVERIES.length];
 const liveryVars = (name) => {
   const [c1, c2, ink] = livery(name);
@@ -158,7 +165,7 @@ function filtered() {
 }
 
 const plate = (name, size = "") =>
-  h("div", { class: `plate ${size}`, style: liveryVars(name), "aria-hidden": "true" }, carNumber(name));
+  h("div", { class: `plate ${size}`, style: liveryVars(name), "aria-hidden": "true" }, initials(name));
 
 function card(s, i) {
   const mine = state.myReactions[s.id] || [];

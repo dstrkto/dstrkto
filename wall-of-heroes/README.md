@@ -6,7 +6,7 @@ see who's on pole position.
 
 ## Features
 
-- **The Wall**: shout-out cards with a car number and livery colors per agent, the customer quote,
+- **The Wall**: shout-out cards with each agent's initials and livery colours, the customer quote,
   an optional pit wall note, and team/channel tags. Loading, empty and error states included.
 - **My call-outs**: pick your name (it's remembered in your browser) to open your "garage" with
   your call-outs, cheers, and all-time position. Click any name on a card to jump to that driver.
