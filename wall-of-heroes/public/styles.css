@@ -285,6 +285,21 @@ blockquote::before {
 .msg.err { color: var(--red); }
 .hint { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
 
+.btn.danger { background: transparent; border: 1px solid var(--red); color: var(--red); padding: 8px 16px; }
+.btn.danger:hover { background: var(--red); color: #fff; }
+.btn:disabled { opacity: .5; cursor: wait; }
+
+.manage { margin-top: 24px; }
+.manage-list { list-style: none; margin: 14px 0 0; padding: 0; max-height: 560px; overflow-y: auto; }
+.manage-list li {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 4px; border-bottom: 1px solid var(--line);
+}
+.manage-main { flex: 1; min-width: 0; }
+.manage-title { overflow-wrap: anywhere; }
+.manage-quote { color: var(--text); opacity: .85; margin: 2px 0; overflow-wrap: anywhere; }
+.manage-meta { color: var(--muted); font-size: .85rem; }
+
 /* ---------- Footer ---------- */
 .foot { text-align: center; color: var(--muted); }
 .foot p { padding: 18px 16px 28px; margin: 0; }

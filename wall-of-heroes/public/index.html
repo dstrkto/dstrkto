@@ -123,8 +123,20 @@
           <button class="btn big" type="submit">🏁 Wave the flag</button>
           <p id="postMsg" class="msg" role="status"></p>
         </div>
-        <p class="hint">Unlocked: delete buttons now show on the wall's cards.</p>
+        <p class="hint">To remove a post, use Manage shout-outs below or the Delete button on any card on the wall.</p>
       </form>
+
+      <div id="managePanel" class="panel manage" hidden>
+        <div class="panel-head">
+          <h2>🧹 Manage shout-outs</h2>
+          <span id="manageCount" class="chip"></span>
+        </div>
+        <label>Find a post
+          <input id="manageSearch" type="search" placeholder="Agent, team, leader, or words from the verbatim">
+        </label>
+        <ul id="manageList" class="manage-list"></ul>
+        <p id="manageEmpty" class="empty" hidden>No posts match.</p>
+      </div>
     </section>
   </main>
 

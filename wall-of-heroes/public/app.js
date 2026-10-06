@@ -170,7 +170,7 @@ function card(s) {
           }, `${r.emoji} ${s.reactions?.[r.key] || 0}`)
         ),
       ),
-      state.passcode && h("button", { class: "del", onclick: () => remove(s) }, "Delete"),
+      state.passcode && h("button", { class: "del", onclick: (e) => remove(s, e.currentTarget) }, "Delete"),
     ),
   );
 }
@@ -278,7 +278,31 @@ function renderLeaderboard() {
   renderBoard($("#teamStandings"), standings(items, "team"));
 }
 
+function renderManage() {
+  const panel = $("#managePanel");
+  panel.hidden = !state.passcode;
+  if (!state.passcode) return;
+  const q = $("#manageSearch").value.trim().toLowerCase();
+  const list = state.shoutouts.filter((s) =>
+    !q || [s.agent, s.team, s.leader, s.verbatim, s.note].join(" ").toLowerCase().includes(q));
+  $("#manageCount").textContent = `${list.length} of ${plural(state.shoutouts.length, "post")}`;
+  $("#manageList").replaceChildren(...list.map((s) =>
+    h("li", {},
+      h("div", { class: "manage-main" },
+        h("div", { class: "manage-title" }, h("b", {}, s.agent),
+          " · ", [s.team, s.channel].filter(Boolean).join(" · ")),
+        h("div", { class: "manage-quote" },
+          s.verbatim.length > 140 ? `“${s.verbatim.slice(0, 140)}…”` : `“${s.verbatim}”`),
+        h("div", { class: "manage-meta" },
+          `Posted by ${s.leader} · ${new Date(s.createdAt).toLocaleString()}`),
+      ),
+      h("button", { class: "btn danger", onclick: (e) => remove(s, e.currentTarget) }, "Delete"),
+    )));
+  $("#manageEmpty").hidden = list.length > 0;
+}
+
 function render() {
+  renderManage();
   renderStats();
   renderFilters();
   renderGarage();
@@ -319,14 +343,17 @@ async function react(s, key, btn) {
   }
 }
 
-async function remove(s) {
-  if (!confirm(`Delete this shout-out for ${s.agent}?`)) return;
+async function remove(s, btn) {
+  if (!confirm(`Delete this shout-out for ${s.agent}? This can't be undone.`)) return;
+  if (btn) btn.disabled = true;
   try {
     await api(`/api/shoutouts?id=${encodeURIComponent(s.id)}`, { method: "DELETE" });
     state.shoutouts = state.shoutouts.filter((x) => x.id !== s.id);
     render();
   } catch (err) {
     alert(err.message);
+    if (btn) btn.disabled = false;
+    if (err.status === 401) setLeaderMode("");
   }
 }
 
@@ -358,6 +385,7 @@ function setLeaderMode(passcode) {
   $("#unlockForm").hidden = !!passcode;
   $("#postForm").hidden = !passcode;
   renderWall();
+  renderManage();
 }
 
 // ---------- wiring ----------
@@ -400,6 +428,7 @@ function init() {
   });
 
   $("#lockBtn").addEventListener("click", () => setLeaderMode(""));
+  $("#manageSearch").addEventListener("input", renderManage);
 
   $("#postForm").addEventListener("submit", async (e) => {
     e.preventDefault();

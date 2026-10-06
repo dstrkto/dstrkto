@@ -13,8 +13,10 @@ see who's on pole position.
 - **Filters**: team, channel (Phone, Chat, Email, Social, SMS, Video), and free-text search.
 - **Cheers**: 🏁 🔥 🏆 reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
 - **Pole Position**: podium plus driver and team standings for the last 7 days, last 30 days, or all time.
-- **Pit Lane**: leaders unlock posting and deleting with a shared passcode.
+- **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to find and delete posted ones in **Manage shout-outs**.
 - Auto-refreshes every 60 seconds, so it can run on a team monitor.
+
+Design handoff brief: [`docs/design-brief.md`](docs/design-brief.md).
 
 ## Stack
 
