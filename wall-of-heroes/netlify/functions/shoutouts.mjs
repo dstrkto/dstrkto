@@ -13,29 +13,40 @@ export default async (req) => {
   }
 
   if (req.method === "POST") {
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return json({ error: "Invalid JSON." }, 400);
-    }
+    const body = await readJson(req);
+    if (!body) return json({ error: "Invalid JSON." }, 400);
     const shoutout = {
       id: randomUUID(),
-      agent: clean(body.agent, 60),
-      team: clean(body.team, 40),
-      channel: CHANNELS.includes(body.channel) ? body.channel : "Phone",
-      verbatim: clean(body.verbatim, 1000),
-      customer: clean(body.customer, 60),
-      leader: clean(body.leader, 60),
-      note: clean(body.note, 280),
+      ...editableFields(body),
       createdAt: new Date().toISOString(),
       reactions: Object.fromEntries(REACTIONS.map((r) => [r, 0])),
     };
-    if (!shoutout.agent || !shoutout.verbatim || !shoutout.leader) {
-      return json({ error: "Agent, verbatim, and leader name are required." }, 400);
-    }
+    const missing = missingFields(shoutout);
+    if (missing) return json({ error: missing }, 400);
     await store().setJSON(key(shoutout.id), shoutout, { onlyIfNew: true });
     return json({ shoutout }, 201);
+  }
+
+  // Edit: replaces only the text fields; id, createdAt and reactions are kept.
+  if (req.method === "PUT") {
+    const id = url.searchParams.get("id");
+    if (!validId(id)) return json({ error: "Invalid id." }, 400);
+    const body = await readJson(req);
+    if (!body) return json({ error: "Invalid JSON." }, 400);
+    const fields = editableFields(body);
+    const missing = missingFields(fields);
+    if (missing) return json({ error: missing }, 400);
+
+    const s = store();
+    // Retry if a cheer lands between the read and the write, so it isn't lost.
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const entry = await s.getWithMetadata(key(id), { type: "json" });
+      if (!entry) return json({ error: "This shout-out no longer exists." }, 404);
+      const shoutout = { ...entry.data, ...fields, updatedAt: new Date().toISOString() };
+      const result = await s.setJSON(key(id), shoutout, { onlyIfMatch: entry.etag });
+      if (result.modified) return json({ shoutout });
+    }
+    return json({ error: "Busy pit lane, try again." }, 409);
   }
 
   if (req.method === "DELETE") {
@@ -47,5 +58,29 @@ export default async (req) => {
 
   return json({ error: "Method not allowed." }, 405);
 };
+
+async function readJson(req) {
+  try {
+    return await req.json();
+  } catch {
+    return null;
+  }
+}
+
+function editableFields(body) {
+  return {
+    agent: clean(body.agent, 60),
+    team: clean(body.team, 40),
+    channel: CHANNELS.includes(body.channel) ? body.channel : "Phone",
+    verbatim: clean(body.verbatim, 1000),
+    customer: clean(body.customer, 60),
+    leader: clean(body.leader, 60),
+    note: clean(body.note, 280),
+  };
+}
+
+function missingFields(f) {
+  return !f.agent || !f.verbatim || !f.leader ? "Agent, verbatim, and leader name are required." : "";
+}
 
 export const config = { path: "/api/shoutouts" };

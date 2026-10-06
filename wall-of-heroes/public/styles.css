@@ -77,6 +77,7 @@ h3 { margin: 0; font-size: 20px; font-weight: 600; text-transform: uppercase; le
   transition: background 200ms var(--ease), color 200ms var(--ease);
 }
 .btn-small:hover { background: var(--jlr-ink); color: var(--jlr-white); }
+.row-actions { display: flex; gap: 8px; flex: none; }
 .btn-small:disabled { opacity: 0.55; cursor: wait; }
 
 /* ---------- Inputs ---------- */
@@ -426,3 +427,4 @@ blockquote { margin: 0; display: flex; flex-direction: column; gap: 8px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.card-foot .row-actions { justify-content: flex-end; }

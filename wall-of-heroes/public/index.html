@@ -148,8 +148,8 @@
       <div id="unlocked" hidden>
         <div class="section-head ruled">
           <div>
-            <div class="label">Pit Lane · Open</div>
-            <h2 class="section-title">Post a shout-out</h2>
+            <div class="label" id="pitEyebrow">Pit Lane · Open</div>
+            <h2 class="section-title" id="pitTitle">Post a shout-out</h2>
           </div>
           <button type="button" id="lockBtn" class="btn-outline">Lock pit lane</button>
         </div>
@@ -191,13 +191,14 @@
             <div class="full form-foot">
               <div id="postOk" class="banner-ok" role="status" hidden>
                 <span class="checker-chip light" aria-hidden="true"></span>
-                <span>Posted. <strong id="postOkName"></strong> is on the wall.</span>
+                <span id="postOkText"></span>
               </div>
               <div id="postErr" class="inline-error boxed" role="alert" hidden><span class="err-tag">Error</span><span id="postErrMsg"></span></div>
               <button type="submit" id="submitBtn" class="btn-solid big">
                 <span class="checker-chip light" aria-hidden="true"></span>
                 <span id="submitLabel">Wave the flag</span>
               </button>
+              <button type="button" id="cancelEdit" class="btn-outline" hidden>Cancel edit</button>
             </div>
           </form>
 

@@ -23,6 +23,7 @@ const state = {
   myReactions: {},
   saving: new Set(),
   pendingDelete: null,
+  editing: null,
 };
 
 // ---------- helpers ----------
@@ -164,6 +165,10 @@ function filtered() {
   );
 }
 
+const rowActions = (s) => h("div", { class: "row-actions" },
+  h("button", { class: "btn-small", "aria-label": `Edit shout-out for ${s.agent}`, onclick: () => startEdit(s) }, "Edit"),
+  h("button", { class: "btn-small", "aria-label": `Delete shout-out for ${s.agent}`, onclick: () => askDelete(s) }, "Delete"));
+
 const plate = (name, size = "") =>
   h("div", { class: `plate ${size}`, style: liveryVars(name), "aria-hidden": "true" }, initials(name));
 
@@ -185,9 +190,6 @@ function card(s, i) {
             h("span", { class: "tag" }, s.channel),
           ),
         ),
-        state.passcode && h("button", {
-          class: "btn-small", "aria-label": `Delete shout-out for ${s.agent}`, onclick: () => askDelete(s),
-        }, "Delete"),
       ),
       h("blockquote", {},
         h("div", { class: "qmark", "aria-hidden": "true" }, "“"),
@@ -196,7 +198,7 @@ function card(s, i) {
       ),
       s.note && h("div", { class: "note" }, h("div", { class: "label" }, "Pit wall note"), h("div", {}, s.note)),
       h("div", { class: "card-foot" },
-        h("div", { class: "flagged" }, "Flagged by ", h("b", {}, s.leader), ` · ${timeAgo(s.createdAt)}`),
+        h("div", { class: "flagged" }, "Flagged by ", h("b", {}, s.leader), ` · ${timeAgo(s.createdAt)}${s.updatedAt ? " · edited" : ""}`),
         h("div", { class: "reacts", role: "group", "aria-label": "Cheers" },
           REACTIONS.map((r) => {
             const on = mine.includes(r.key);
@@ -208,6 +210,7 @@ function card(s, i) {
             }, h("span", { class: `mark ${r.key}`, "aria-hidden": "true" }), h("span", {}, r.label), h("span", { class: "n" }, count));
           }),
         ),
+        state.passcode && rowActions(s),
       ),
     ),
   );
@@ -343,7 +346,7 @@ function renderManage() {
         h("div", { class: "mrow-title" }, h("b", {}, s.agent), [s.team, s.channel].filter(Boolean).map((t) => ` · ${t}`).join("")),
         h("div", { class: "mrow-snip" }, snip(s.verbatim)),
         h("div", { class: "small" }, `Posted by ${s.leader} · ${fmtDate(s.createdAt)}`)),
-      h("button", { class: "btn-small", "aria-label": `Delete shout-out for ${s.agent}`, onclick: () => askDelete(s) }, "Delete"))));
+      rowActions(s))));
 }
 
 function render() {
@@ -419,6 +422,7 @@ async function confirmDelete() {
   try {
     await api(`/api/shoutouts?id=${encodeURIComponent(s.id)}`, { method: "DELETE" });
     state.shoutouts = state.shoutouts.filter((x) => x.id !== s.id);
+    if (state.editing?.id === s.id) exitEdit();
     setDeleting(false);
     closeModal();
     render();
@@ -474,6 +478,46 @@ function updateCounts(form) {
   $("#nCount").textContent = `${fmt(form.note.value.length)} / 280`;
 }
 
+const submitText = () => (state.editing ? "Save changes" : "Wave the flag");
+
+function showPostOk(...parts) {
+  $("#postOkText").replaceChildren(...parts);
+  $("#postOk").hidden = false;
+}
+
+// Edit mode reuses the post form, prefilled with the shout-out's current text.
+function startEdit(s) {
+  const form = $("#postForm");
+  state.editing = s;
+  showView("pit");
+  for (const k of ["agent", "team", "channel", "leader", "verbatim", "customer", "note"]) {
+    form.elements[k].value = s[k] || "";
+    if (form.querySelector(`.field-err[data-for="${k}"]`)) setFieldError(form, k, "");
+  }
+  updateCounts(form);
+  $("#postOk").hidden = true;
+  $("#postErr").hidden = true;
+  $("#pitEyebrow").textContent = "Pit Lane · Editing";
+  $("#pitTitle").textContent = "Edit shout-out";
+  $("#submitLabel").textContent = submitText();
+  $("#cancelEdit").hidden = false;
+  form.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+  form.elements.verbatim.focus({ preventScroll: true });
+}
+
+function exitEdit() {
+  const form = $("#postForm");
+  state.editing = null;
+  form.reset();
+  form.leader.value = storageGet("woh-leader", "");
+  ["agent", "leader", "verbatim"].forEach((k) => setFieldError(form, k, ""));
+  updateCounts(form);
+  $("#pitEyebrow").textContent = "Pit Lane · Open";
+  $("#pitTitle").textContent = "Post a shout-out";
+  $("#submitLabel").textContent = submitText();
+  $("#cancelEdit").hidden = true;
+}
+
 async function submitPost(e) {
   e.preventDefault();
   const form = e.target;
@@ -489,29 +533,41 @@ async function submitPost(e) {
   $("#postErr").hidden = true;
   if (firstBad) { firstBad.focus(); return; }
 
+  const editing = state.editing;
   const btn = $("#submitBtn");
   btn.disabled = true;
-  $("#submitLabel").textContent = "Waving…";
+  $("#submitLabel").textContent = editing ? "Saving…" : "Waving…";
   try {
-    const { shoutout } = await api("/api/shoutouts", { method: "POST", body: JSON.stringify(data) });
-    state.shoutouts.unshift(shoutout);
-    storageSet("woh-leader", data.leader.trim());
-    form.reset();
-    form.leader.value = data.leader.trim();
-    updateCounts(form);
-    $("#postOkName").textContent = shoutout.agent;
-    $("#postOk").hidden = false;
-    burst(window.innerWidth / 2, window.innerHeight * 0.45, true);
+    if (editing) {
+      const { shoutout } = await api(`/api/shoutouts?id=${encodeURIComponent(editing.id)}`, {
+        method: "PUT", body: JSON.stringify(data),
+      });
+      state.shoutouts = state.shoutouts.map((x) => (x.id === shoutout.id ? shoutout : x));
+      exitEdit();
+      showPostOk("Saved. ", h("strong", {}, shoutout.agent), "’s shout-out is updated.");
+    } else {
+      const { shoutout } = await api("/api/shoutouts", { method: "POST", body: JSON.stringify(data) });
+      state.shoutouts.unshift(shoutout);
+      storageSet("woh-leader", data.leader.trim());
+      form.reset();
+      form.leader.value = data.leader.trim();
+      updateCounts(form);
+      showPostOk("Posted. ", h("strong", {}, shoutout.agent), " is on the wall.");
+      burst(window.innerWidth / 2, window.innerHeight * 0.45, true);
+    }
     render();
   } catch (err) {
     $("#postErrMsg").textContent = err.status === 401
       ? "Your passcode is no longer valid. Unlock Pit Lane again."
-      : `Couldn’t post to the pit wall. ${err.message}`;
+      : editing
+        ? `Couldn’t save your changes. ${err.message}`
+        : `Couldn’t post to the pit wall. ${err.message}`;
     $("#postErr").hidden = false;
     if (err.status === 401) setLeaderMode("");
+    if (err.status === 404) { exitEdit(); load(); }
   } finally {
     btn.disabled = false;
-    $("#submitLabel").textContent = "Wave the flag";
+    $("#submitLabel").textContent = submitText();
   }
 }
 
@@ -566,7 +622,8 @@ function init() {
     }
   });
   $("#passcode").addEventListener("input", () => { $("#passErr").hidden = true; $("#passcode").removeAttribute("aria-invalid"); });
-  $("#lockBtn").addEventListener("click", () => { $("#postOk").hidden = true; setLeaderMode(""); });
+  $("#lockBtn").addEventListener("click", () => { $("#postOk").hidden = true; exitEdit(); setLeaderMode(""); });
+  $("#cancelEdit").addEventListener("click", () => { $("#postErr").hidden = true; exitEdit(); });
 
   const form = $("#postForm");
   form.addEventListener("submit", submitPost);

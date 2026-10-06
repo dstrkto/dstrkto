@@ -13,7 +13,7 @@ see who's on pole position.
 - **Filters**: team, channel (Phone, Chat, Email, Social, SMS, Video), and free-text search.
 - **Cheers**: Flag / On fire / Trophy reactions anyone can toggle. Counts are shared; each browser remembers its own toggles.
 - **Pole Position**: podium plus driver and team standings for the last 7 days, last 30 days, or all time.
-- **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to find and delete posted ones in **Manage shout-outs** (with a confirmation dialog).
+- **Pit Lane**: leaders unlock with a shared passcode to post shout-outs and to edit or delete posted ones (from **Manage shout-outs** or the buttons on each card). Edits keep the original post date and cheers, and the card shows "edited".
 - Auto-refreshes every 60 seconds, so it can run on a team monitor.
 
 Design handoff brief: [`docs/design-brief.md`](docs/design-brief.md).
@@ -68,6 +68,7 @@ LEADER_PASSCODE=letmein netlify dev
 |---|---|---|---|
 | GET | `/api/shoutouts` | none | returns `{ shoutouts: [...] }`, newest first |
 | POST | `/api/shoutouts` | `x-leader-passcode` | `{ agent, team?, channel?, verbatim, customer?, leader, note? }` |
+| PUT | `/api/shoutouts?id=…` | `x-leader-passcode` | same fields as POST; replaces text fields only, keeps `id`, `createdAt`, `reactions`, adds `updatedAt` |
 | DELETE | `/api/shoutouts?id=…` | `x-leader-passcode` | |
 | POST | `/api/react` | none | `{ id, reaction: "flag" \| "fire" \| "trophy", delta?: 1 \| -1 }` |
 | POST | `/api/verify` | `x-leader-passcode` | checks the passcode |
