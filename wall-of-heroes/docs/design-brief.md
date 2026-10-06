@@ -47,7 +47,7 @@ through the design system instead of on top of it.
 ### 3.1 Header
 - Eyebrow label: "Contact Center Grand Prix"
 - Title: "Wall of Heroes"
-- Tagline: "Real words from real customers about the drivers who make it happen."
+- Tagline: "Real words from real customers, peers, & leadership about the drivers who make it happen."
 - **Stats row (4 tiles):** Shout-outs (total) · Drivers on the board (unique agents) · Last 7 days · Cheers (total reactions). Values are integers from 0 up to the thousands.
 
 ### 3.2 Navigation (sticky at top on scroll)
