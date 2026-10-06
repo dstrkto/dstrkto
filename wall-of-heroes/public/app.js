@@ -522,7 +522,7 @@ async function submitPost(e) {
   e.preventDefault();
   const form = e.target;
   const data = Object.fromEntries(new FormData(form));
-  const required = { agent: "Add the agent’s name.", leader: "Add your name.", verbatim: "Add the customer’s words." };
+  const required = { agent: "Add the agent’s name.", leader: "Add your name.", verbatim: "Add the verbatim." };
   let firstBad = null;
   for (const [k, msg] of Object.entries(required)) {
     const bad = !String(data[k] || "").trim();

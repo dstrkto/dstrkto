@@ -1,12 +1,12 @@
 # 🏁 Wall of Heroes
 
 A racing-themed recognition wall for remote contact center teams. Leaders post positive
-customer verbatims; agents ("drivers") find their call-outs, cheer each other on, and
+verbatims from customers, peers and leadership; agents ("drivers") find their call-outs, cheer each other on, and
 see who's on pole position.
 
 ## Features
 
-- **The Wall**: shout-out cards with each agent's initials and livery colours, the customer quote,
+- **The Wall**: shout-out cards with each agent's initials and livery colours, the quote and who it's from,
   an optional pit wall note, and team/channel tags. Loading, empty and error states included.
 - **My call-outs**: pick your name (it's remembered in your browser) to open your "garage" with
   your call-outs, cheers, and all-time position. Click any name on a card to jump to that driver.
